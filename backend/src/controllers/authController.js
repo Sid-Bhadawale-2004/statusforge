@@ -3,6 +3,8 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const Organization = require("../models/organization");
 const { generateAccessToken, generateRefreshToken } = require("../utils/generateTokens");
+const crypto = require("crypto");
+const sendEmail = require("../utils/sendEmail");
 
 const cookieOptions = {
   httpOnly: true,
@@ -92,6 +94,73 @@ exports.refresh = async (req, res) => {
   }
 };
 
+
+// POST /api/auth/forgot-password
+exports.forgotPassword = async (req,res) => {
+    const { email } = req.body;
+    const genericMessage = { message: "If an account with that email exists, a reset link has been sent."};
+
+    try {
+        const user = await User.findOne({ email });
+
+        // Always respond the same way — don't reveal whether the email exists
+        if (!user) return res.json(genericMessage);
+
+        const rawToken = crypto.randomBytes(32).toString('hex');
+        const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
+
+        user.resetPasswordTokenHash = tokenHash;
+        user.resetPasswordExpires = Date.now() + 15 * 60 * 1000; // 15 minutes
+        await user.save();
+
+        const resetLink = `${process.env.CLIENT_URL}/reset-password/${rawToken}`;
+
+        await sendEmail({
+            to: user.email,
+            subject: "Reset Your StatusForge password",
+            html: `<p>Click the link below to reset your password. This link expires in 15 minutes.</p>
+                <a href="${resetLink}">${resetLink}</a>`,
+        });
+        res.json(genericMessage);
+    } catch(err){
+        console.error(err);
+        res.status(500).json({ message: "Something went wrong. Please try again."});
+    }
+};
+
+// POST /api/auth/reset-password/:token
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { newPassword } = req.body;
+
+    if (!newPassword || newPassword.length < 8) {
+      return res.status(400).json({ message: "Password must be at least 8 characters." });
+    }
+
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+    const user = await User.findOne({
+      resetPasswordTokenHash: tokenHash,
+      resetPasswordExpires: { $gt: Date.now() }, // not expired
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Reset link is invalid or has expired." });
+    }
+
+    user.passwordHash = await bcrypt.hash(newPassword, 10);
+    user.resetPasswordTokenHash = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    res.json({ message: "Password reset successfully. You can now log in." });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Something went wrong. Please try again." });
+  }
+};
+
 // POST /api/auth/logout
 exports.logout = (req, res) => {
   res.clearCookie("refreshToken", cookieOptions);
@@ -103,3 +172,5 @@ exports.getMe = async (req, res) => {
   const user = await User.findById(req.user.userId).select("-passwordHash");
   res.json({ user });
 };
+
+
