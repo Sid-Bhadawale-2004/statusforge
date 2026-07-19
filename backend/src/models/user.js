@@ -8,6 +8,7 @@ const userSchema = new mongoose.Schema(
         email: { type: String , required: true, unique:true , lowercase: true, trim: true },
         passwordHash: { type: String }, // no longer "required" — Google-only users won't have one
         resetPasswordTokenHash: { type: String },
+        googleId: { type: String, unique: true, sparse: true }, // sparse = allows many nulls, but no duplicate real values
         resetPasswordExpires: { type: Date },
         role: { type: String, enum: ["admin", "responder", "viewer"], default: "admin" },
         phone: { type: String },

@@ -1,22 +1,26 @@
-import { useEffect, useState } from "react";
-import api from "./services/api";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import LoginPage from "./pages/LoginPage";
+import SignupPage from "./pages/SignupPage";
+import DashboardPage from "./pages/DashboardPage";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
-  const [status, setStatus] = useState("checking...");
-
-  useEffect(() => {
-    api.get("/health")
-      .then((res) => setStatus(res.data.status))
-      .catch(() => setStatus("backend not reachable"));
-  }, []);
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-100">
-      <div className="p-6 bg-white rounded-xl shadow">
-        <h1 className="text-2xl font-bold text-slate-800">StatusForge</h1>
-        <p className="mt-2 text-slate-600">Backend status: <span className="font-mono">{status}</span></p>
-      </div>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/" element={<Navigate to="/login" replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
