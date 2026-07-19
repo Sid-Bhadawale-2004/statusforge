@@ -5,6 +5,9 @@ const Organization = require("../models/organization");
 const { generateAccessToken, generateRefreshToken } = require("../utils/generateTokens");
 const crypto = require("crypto");
 const sendEmail = require("../utils/sendEmail");
+const { OAuth2Client } = require("google-auth-library");
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
 
 const cookieOptions = {
   httpOnly: true,
@@ -161,10 +164,79 @@ exports.resetPassword = async (req, res) => {
   }
 };
 
+// POST /api/auth/google
+exports.googleAuth = async (req, res) => {
+  try {
+    const { credential } = req.body; // the ID token from the frontend
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID, // must match OUR client id, or it could be someone else's token
+    });
+
+    const payload = ticket.getPayload();
+    const { sub: googleId, email, name } = payload;
+
+    let user = await User.findOne({ email });
+
+    if (user) {
+      // Existing account (maybe signed up with password before) — link Google to it
+      if (!user.googleId) {
+        user.googleId = googleId;
+        await user.save();
+      }
+    } else {
+      // Brand new user via Google — create their own organization
+      const organization = await Organization.create({ name: `${name}'s Organization` });
+      user = await User.create({
+        organizationId: organization._id,
+        name,
+        email,
+        googleId,
+        role: "admin",
+      });
+    }
+
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
+
+    res.cookie("refreshToken", refreshToken, cookieOptions);
+    res.json({
+      accessToken,
+      user: { id: user._id, name: user.name, email: user.email, role: user.role, organizationId: user.organizationId },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(401).json({ message: "Google sign-in failed. Please try again." });
+  }
+};
+
 // POST /api/auth/logout
 exports.logout = (req, res) => {
   res.clearCookie("refreshToken", cookieOptions);
   res.json({ message: "Logged out successfully." });
+};
+
+// POST /api/auth/set-password  (must be logged in)
+exports.setPassword = async (req, res) => {
+  try {
+    const { newPassword } = req.body;
+
+    if (!newPassword || newPassword.length < 8) {
+      return res.status(400).json({ message: "Password must be at least 8 characters." });
+    }
+
+    const user = await User.findById(req.user.userId);
+    if (!user) return res.status(404).json({ message: "User not found." });
+
+    user.passwordHash = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    res.json({ message: "Password set successfully. You can now log in with email and password too." });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Something went wrong. Please try again." });
+  }
 };
 
 // GET /api/auth/me
