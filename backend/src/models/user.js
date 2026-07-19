@@ -6,7 +6,9 @@ const userSchema = new mongoose.Schema(
         organizationId: { type: mongoose.Schema.Types.ObjectId , ref: "Organization" ,required:true },
         name: { type: String, required: true, trim: true },
         email: { type: String , required: true, unique:true , lowercase: true, trim: true },
-        passwordHash: { type: String, required: true },
+        passwordHash: { type: String }, // no longer "required" — Google-only users won't have one
+        resetPasswordTokenHash: { type: String },
+        resetPasswordExpires: { type: Date },
         role: { type: String, enum: ["admin", "responder", "viewer"], default: "admin" },
         phone: { type: String },
     },
