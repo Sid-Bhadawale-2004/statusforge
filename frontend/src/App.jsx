@@ -2,7 +2,10 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import DashboardPage from "./pages/DashboardPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ProtectedRoute from "./components/ProtectedRoute";
+
 
 function App() {
   return (
@@ -19,6 +22,8 @@ function App() {
           }
         />
         <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
       </Routes>
     </BrowserRouter>
   );
