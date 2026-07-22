@@ -5,6 +5,7 @@ const Organization = require("../models/organization");
 const { generateAccessToken, generateRefreshToken } = require("../utils/generateTokens");
 const crypto = require("crypto");
 const sendEmail = require("../utils/sendEmail");
+const { sendPasswordChangedEmail } = require("../utils/authEmails");
 const { OAuth2Client } = require("google-auth-library");
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -157,6 +158,8 @@ exports.resetPassword = async (req, res) => {
     user.resetPasswordExpires = undefined;
     await user.save();
 
+    await sendPasswordChangedEmail(user); 
+
     res.json({ message: "Password reset successfully. You can now log in." });
   } catch (err) {
     console.error(err);
@@ -232,6 +235,8 @@ exports.setPassword = async (req, res) => {
     user.passwordHash = await bcrypt.hash(newPassword, 10);
     await user.save();
 
+    await sendPasswordChangedEmail(user);
+    
     res.json({ message: "Password set successfully. You can now log in with email and password too." });
   } catch (err) {
     console.error(err);
