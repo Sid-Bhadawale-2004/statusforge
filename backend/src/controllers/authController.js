@@ -8,7 +8,7 @@ const sendEmail = require("../utils/sendEmail");
 const { sendPasswordChangedEmail } = require("../utils/authEmails");
 const { OAuth2Client } = require("google-auth-library");
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
+const RefreshToken = require("../models/RefreshToken");
 
 const cookieOptions = {
   httpOnly: true,
@@ -16,6 +16,19 @@ const cookieOptions = {
   sameSite: "lax",
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 };
+
+const hashToken = (token) => crypto.createHash("sha256").update(token).digest("hex");
+
+async function issueRefreshToken(userId, familyId = crypto.randomUUID()) {
+  const refreshToken = jwt.sign({ userId, familyId }, process.env.JWT_REFRESH_SECRET, { expiresIn: "7d" });
+  await RefreshToken.create({
+    userId,
+    tokenHash: hashToken(refreshToken),
+    familyId,
+    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  });
+  return refreshToken;
+}
 
 // POST /api/auth/signup
 exports.signup = async (req, res) => {
@@ -43,7 +56,7 @@ exports.signup = async (req, res) => {
     });
 
     const accessToken = generateAccessToken(user);
-    const refreshToken = generateRefreshToken(user);
+    const refreshToken = await issueRefreshToken(user._id);
 
     res.cookie("refreshToken", refreshToken, cookieOptions);
     res.status(201).json({
@@ -68,7 +81,7 @@ exports.login = async (req, res) => {
     }
 
     const accessToken = generateAccessToken(user);
-    const refreshToken = generateRefreshToken(user);
+    const refreshToken = await issueRefreshToken(user._id);
 
     res.cookie("refreshToken", refreshToken, cookieOptions);
     res.json({
@@ -82,14 +95,51 @@ exports.login = async (req, res) => {
 };
 
 // POST /api/auth/refresh
+// exports.refresh = async (req, res) => {
+//   const token = req.cookies.refreshToken;
+//   if (!token) return res.status(401).json({ message: "No refresh token provided." });
+
+//   try {
+//     const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+//     const user = await User.findById(decoded.userId);
+//     if (!user) return res.status(401).json({ message: "User no longer exists." });
+
+//     const accessToken = generateAccessToken(user);
+//     res.json({ accessToken });
+//   } catch (err) {
+//     return res.status(401).json({ message: "Invalid or expired refresh token." });
+//   }
+// };
+
+// POST /api/auth/refresh    // to safeguard from cookie editor extension
 exports.refresh = async (req, res) => {
   const token = req.cookies.refreshToken;
   if (!token) return res.status(401).json({ message: "No refresh token provided." });
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+    const tokenHash = hashToken(token);
+    const stored = await RefreshToken.findOne({ tokenHash });
+
+    if (!stored) {
+      return res.status(401).json({ message: "Session not recognized. Please log in again." });
+    }
+
+    if (stored.isUsed) {
+      // Reuse detected — someone has a copy of an old, already-rotated token
+      await RefreshToken.deleteMany({ familyId: stored.familyId });
+      res.clearCookie("refreshToken", cookieOptions);
+      return res.status(401).json({ message: "Security alert: session revoked. Please log in again." });
+    }
+
+    stored.isUsed = true;
+    await stored.save();
+
     const user = await User.findById(decoded.userId);
     if (!user) return res.status(401).json({ message: "User no longer exists." });
+
+    const newRefreshToken = await issueRefreshToken(user._id, decoded.familyId);
+    res.cookie("refreshToken", newRefreshToken, cookieOptions);
 
     const accessToken = generateAccessToken(user);
     res.json({ accessToken });
@@ -201,7 +251,7 @@ exports.googleAuth = async (req, res) => {
     }
 
     const accessToken = generateAccessToken(user);
-    const refreshToken = generateRefreshToken(user);
+    const refreshToken = await issueRefreshToken(user._id);
 
     res.cookie("refreshToken", refreshToken, cookieOptions);
     res.json({
@@ -215,7 +265,20 @@ exports.googleAuth = async (req, res) => {
 };
 
 // POST /api/auth/logout
-exports.logout = (req, res) => {
+// exports.logout = (req, res) => {
+//   res.clearCookie("refreshToken", cookieOptions);
+//   res.json({ message: "Logged out successfully." });
+// };
+
+// POST /api/auth/logout
+exports.logout = async (req, res) => {
+  const token = req.cookies.refreshToken;
+  if (token) {
+    const stored = await RefreshToken.findOne({ tokenHash: hashToken(token) });
+    if (stored) {
+      await RefreshToken.deleteMany({ familyId: stored.familyId });
+    }
+  }
   res.clearCookie("refreshToken", cookieOptions);
   res.json({ message: "Logged out successfully." });
 };
