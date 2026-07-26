@@ -5,7 +5,7 @@ const Organization = require("../models/organization");
 const { generateAccessToken, generateRefreshToken } = require("../utils/generateTokens");
 const crypto = require("crypto");
 const sendEmail = require("../utils/sendEmail");
-const { sendPasswordChangedEmail } = require("../utils/authEmails");
+const { sendPasswordChangedEmail ,sendNewLoginEmail } = require("../utils/authEmails");
 const { OAuth2Client } = require("google-auth-library");
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const RefreshToken = require("../models/RefreshToken");
@@ -82,6 +82,12 @@ exports.login = async (req, res) => {
 
     const accessToken = generateAccessToken(user);
     const refreshToken = await issueRefreshToken(user._id);
+
+    await sendNewLoginEmail(user, {
+      ip: req.ip,
+      userAgent: req.headers["user-agent"],
+      time: new Date().toLocaleString(),
+    });
 
     res.cookie("refreshToken", refreshToken, cookieOptions);
     res.json({
@@ -230,16 +236,36 @@ exports.googleAuth = async (req, res) => {
     const payload = ticket.getPayload();
     const { sub: googleId, email, name } = payload;
 
+    // let user = await User.findOne({ email });
+
+    // if (user) {
+    //   // Existing account (maybe signed up with password before) — link Google to it
+    //   if (!user.googleId) {
+    //     user.googleId = googleId;
+    //     await user.save();
+    //   }
+    // } else {
+    //   // Brand new user via Google — create their own organization
+    //   const organization = await Organization.create({ name: `${name}'s Organization` });
+    //   user = await User.create({
+    //     organizationId: organization._id,
+    //     name,
+    //     email,
+    //     googleId,
+    //     role: "admin",
+    //   });
+    // }
+
     let user = await User.findOne({ email });
+    let isNewUser = false;
 
     if (user) {
-      // Existing account (maybe signed up with password before) — link Google to it
       if (!user.googleId) {
         user.googleId = googleId;
         await user.save();
       }
     } else {
-      // Brand new user via Google — create their own organization
+      isNewUser = true;
       const organization = await Organization.create({ name: `${name}'s Organization` });
       user = await User.create({
         organizationId: organization._id,
@@ -249,9 +275,16 @@ exports.googleAuth = async (req, res) => {
         role: "admin",
       });
     }
-
     const accessToken = generateAccessToken(user);
     const refreshToken = await issueRefreshToken(user._id);
+
+    if (!isNewUser) {
+      await sendNewLoginEmail(user, {
+        ip: req.ip,
+        userAgent: req.headers["user-agent"],
+        time: new Date().toLocaleString(),
+      }); // NEW — only for returning users, not first-time signups
+    }
 
     res.cookie("refreshToken", refreshToken, cookieOptions);
     res.json({
