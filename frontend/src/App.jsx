@@ -5,7 +5,8 @@ import DashboardPage from "./pages/DashboardPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ProtectedRoute from "./components/ProtectedRoute";
-
+import ServicesPage from "./pages/ServicesPage";
+import TeamPage from "./pages/TeamPage";
 
 function App() {
   return (
@@ -21,6 +22,15 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/services"
+          element={
+            <ProtectedRoute>
+              <ServicesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/team" element={<ProtectedRoute><TeamPage /></ProtectedRoute>} />
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />

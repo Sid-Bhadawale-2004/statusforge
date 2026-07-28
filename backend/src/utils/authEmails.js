@@ -31,4 +31,17 @@ async function sendNewLoginEmail(user, { ip, userAgent, time }) {
   });
 }
 
-module.exports = { sendPasswordChangedEmail, sendNewLoginEmail };
+async function sendInviteEmail(user, { orgName, inviterName, setupLink }) {
+  await sendEmail({
+    to: user.email,
+    subject: `You've been invited to join ${orgName} on StatusForge`,
+    html: `
+      <p>Hi ${user.name},</p>
+      <p>${inviterName} has invited you to join <strong>${orgName}</strong> on StatusForge as a <strong>${user.role}</strong>.</p>
+      <p>Click below to set your password and get started. This link expires in 24 hours.</p>
+      <a href="${setupLink}">${setupLink}</a>
+    `,
+  });
+}
+
+module.exports = { sendPasswordChangedEmail, sendNewLoginEmail, sendInviteEmail };
