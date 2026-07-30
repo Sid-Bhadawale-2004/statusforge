@@ -7,6 +7,7 @@ const helmet = require("helmet");
 const authRoutes = require("./routes/authRoutes");
 const serviceRoutes = require("./routes/serviceRoutes");
 const teamRoutes = require("./routes/teamRoutes");
+const scheduleRoutes = require("./routes/scheduleRoutes");
 
 const app = express();
 app.set("trust proxy", 1);
@@ -23,5 +24,6 @@ connectDB().then(() => {
   app.use("/api/auth", authRoutes);
   app.use("/api/services", serviceRoutes);
   app.use("/api/team", teamRoutes);
+  app.use("/api/schedules", scheduleRoutes);
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 });
