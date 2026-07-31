@@ -26,8 +26,8 @@ This project is being built and documented incrementally — this README reflect
 |---|---|
 | Authentication (JWT + Google OAuth + Forgot/Reset Password) | ✅ Complete |
 | Organization & Multi-Tenant Data Model | ✅ Complete |
-| Service Management | 🔧 In Progress |
-| On-Call Scheduling | ⏳ Planned |
+| Service Management | ✅ Complete |
+| On-Call Scheduling | 🔧 In Progress |
 | Escalation Policy Engine | ⏳ Planned |
 | Incident Ingestion (Webhook API) | ⏳ Planned |
 | Incident Dashboard & Timeline | ⏳ Planned |
