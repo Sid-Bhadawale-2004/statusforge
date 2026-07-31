@@ -14,6 +14,7 @@ function DashboardPage() {
       <Link to="/services" className="text-blue-600 text-sm">Manage Services →</Link>
       <br></br>
       <Link to="/team" className="text-blue-600 text-sm">Manage Team →</Link>
+      <Link to="/schedules" className="text-blue-600 text-sm">On-Call Schedules →</Link>
     </div>
   );
 }

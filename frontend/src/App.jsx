@@ -7,6 +7,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ServicesPage from "./pages/ServicesPage";
 import TeamPage from "./pages/TeamPage";
+import ScheduleBuilderPage from "./pages/ScheduleBuilderPage";
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
           }
         />
         <Route path="/team" element={<ProtectedRoute><TeamPage /></ProtectedRoute>} />
+        <Route path="/schedules" element={<ProtectedRoute><ScheduleBuilderPage /></ProtectedRoute>} />
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
