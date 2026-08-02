@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
+import { ArrowUp, ArrowDown } from "lucide-react";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import AppLayout from "../components/AppLayout";
+import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card";
+import { Button } from "../components/ui/button";
 
 function ScheduleBuilderPage() {
   const { accessToken, user } = useAuth();
@@ -15,20 +19,17 @@ function ScheduleBuilderPage() {
   const [currentOnCall, setCurrentOnCall] = useState(null);
   const [isLoadingSchedule, setIsLoadingSchedule] = useState(false);
 
-  // Form state
-  const [rotationMembers, setRotationMembers] = useState([]); // ordered array of user IDs
+  const [rotationMembers, setRotationMembers] = useState([]);
   const [rotationType, setRotationType] = useState("weekly");
   const [startDate, setStartDate] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Load services + team members once, on page load
   useEffect(() => {
     api.get("/api/services", authHeader).then((res) => setServices(res.data.services));
     api.get("/api/team", authHeader).then((res) => setTeamMembers(res.data.members));
   }, []);
 
-  // Whenever the selected service changes, fetch ITS schedule (or find there isn't one)
   useEffect(() => {
     if (!selectedServiceId) return;
 
@@ -44,10 +45,9 @@ function ScheduleBuilderPage() {
         setCurrentOnCall(res.data.currentOnCall);
         setRotationMembers(res.data.schedule.rotationMembers.map((m) => m._id));
         setRotationType(res.data.schedule.rotationType);
-        setStartDate(res.data.schedule.startDate.slice(0, 10)); // YYYY-MM-DD for the date input
+        setStartDate(res.data.schedule.startDate.slice(0, 10));
       })
       .catch(() => {
-        // No schedule yet for this service — that's fine, just means we're creating one
         setSchedule(null);
         setRotationMembers([]);
         setRotationType("weekly");
@@ -91,7 +91,6 @@ function ScheduleBuilderPage() {
         res = await api.post("/api/schedules", { serviceId: selectedServiceId, ...payload }, authHeader);
       }
       setSchedule(res.data.schedule);
-      // Re-fetch to get the freshly computed currentOnCall
       const refreshed = await api.get(`/api/schedules/service/${selectedServiceId}`, authHeader);
       setCurrentOnCall(refreshed.data.currentOnCall);
     } catch (err) {
@@ -104,102 +103,131 @@ function ScheduleBuilderPage() {
   const getMemberName = (id) => teamMembers.find((m) => m._id === id)?.name || "Unknown";
 
   return (
-    <div className="p-8 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold text-slate-800 mb-6">On-Call Schedule</h1>
+    <AppLayout title="On-call schedules">
+      <div className="max-w-2xl space-y-6">
+        <select
+          value={selectedServiceId}
+          onChange={(e) => setSelectedServiceId(e.target.value)}
+          className="w-full h-9 rounded-lg border border-border bg-card px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <option value="">Select a service...</option>
+          {services.map((s) => (
+            <option key={s._id} value={s._id}>{s.name}</option>
+          ))}
+        </select>
 
-      <select
-        value={selectedServiceId}
-        onChange={(e) => setSelectedServiceId(e.target.value)}
-        className="w-full border rounded px-3 py-2 mb-6"
-      >
-        <option value="">Select a service...</option>
-        {services.map((s) => (
-          <option key={s._id} value={s._id}>{s.name}</option>
-        ))}
-      </select>
+        {selectedServiceId && isLoadingSchedule && (
+          <p className="text-sm text-muted-foreground">Loading schedule...</p>
+        )}
 
-      {selectedServiceId && isLoadingSchedule && <p className="text-slate-500">Loading schedule...</p>}
+        {selectedServiceId && !isLoadingSchedule && (
+          <>
+            {currentOnCall && (
+              <Card className="bg-accent border-accent">
+                <CardContent className="pt-5">
+                  <p className="text-xs text-accent-foreground font-mono mb-1">Currently on-call</p>
+                  <p className="font-display text-lg font-semibold text-foreground">{currentOnCall.name}</p>
+                  <p className="text-sm text-muted-foreground font-mono">{currentOnCall.email}</p>
+                </CardContent>
+              </Card>
+            )}
 
-      {selectedServiceId && !isLoadingSchedule && (
-        <>
-          {currentOnCall && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <p className="text-sm text-blue-700">Currently on-call</p>
-              <p className="text-lg font-semibold text-blue-900">{currentOnCall.name}</p>
-              <p className="text-sm text-blue-600">{currentOnCall.email}</p>
-            </div>
-          )}
+            {isAdmin && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>{schedule ? "Edit rotation" : "Create rotation"}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    {error && (
+                      <p className="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2">{error}</p>
+                    )}
 
-          {isAdmin && (
-            <form onSubmit={handleSubmit} className="bg-white p-4 rounded-lg shadow space-y-4">
-              <h2 className="font-semibold text-slate-700">
-                {schedule ? "Edit rotation" : "Create rotation"}
-              </h2>
-              {error && <p className="text-red-600 text-sm">{error}</p>}
+                    <div>
+                      <p className="text-xs text-muted-foreground font-mono mb-2">Team members</p>
+                      <div className="flex flex-wrap gap-2">
+                        {teamMembers.map((m) => (
+                          <button
+                            type="button"
+                            key={m._id}
+                            onClick={() => toggleMember(m._id)}
+                            className={`px-3 py-1 rounded-full text-sm border transition-colors ${
+                              rotationMembers.includes(m._id)
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "bg-card text-muted-foreground border-border hover:border-primary/30"
+                            }`}
+                          >
+                            {m.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
 
-              <div>
-                <p className="text-sm font-medium text-slate-600 mb-2">Team members (click to add/remove)</p>
-                <div className="flex flex-wrap gap-2">
-                  {teamMembers.map((m) => (
-                    <button
-                      type="button"
-                      key={m._id}
-                      onClick={() => toggleMember(m._id)}
-                      className={`px-3 py-1 rounded-full text-sm border ${
-                        rotationMembers.includes(m._id)
-                          ? "bg-slate-800 text-white border-slate-800"
-                          : "bg-white text-slate-600 border-slate-300"
-                      }`}
-                    >
-                      {m.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
+                    {rotationMembers.length > 0 && (
+                      <div>
+                        <p className="text-xs text-muted-foreground font-mono mb-2">Rotation order</p>
+                        <ol className="space-y-1.5">
+                          {rotationMembers.map((id, index) => (
+                            <li
+                              key={id}
+                              className="flex items-center justify-between bg-muted rounded-lg px-3 py-2"
+                            >
+                              <span className="text-sm text-foreground font-mono">
+                                {index + 1}. {getMemberName(id)}
+                              </span>
+                              <div className="flex gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => moveMember(index, -1)}
+                                  className="text-muted-foreground hover:text-foreground transition-colors"
+                                  aria-label="Move up"
+                                >
+                                  <ArrowUp size={14} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => moveMember(index, 1)}
+                                  className="text-muted-foreground hover:text-foreground transition-colors"
+                                  aria-label="Move down"
+                                >
+                                  <ArrowDown size={14} />
+                                </button>
+                              </div>
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                    )}
 
-              {rotationMembers.length > 0 && (
-                <div>
-                  <p className="text-sm font-medium text-slate-600 mb-2">Rotation order</p>
-                  <ol className="space-y-1">
-                    {rotationMembers.map((id, index) => (
-                      <li key={id} className="flex items-center justify-between bg-slate-50 rounded px-3 py-2">
-                        <span className="text-sm">{index + 1}. {getMemberName(id)}</span>
-                        <div className="flex gap-1">
-                          <button type="button" onClick={() => moveMember(index, -1)} className="text-slate-500 hover:text-slate-800 text-sm">↑</button>
-                          <button type="button" onClick={() => moveMember(index, 1)} className="text-slate-500 hover:text-slate-800 text-sm">↓</button>
-                        </div>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              )}
+                    <div className="flex gap-3">
+                      <select
+                        value={rotationType}
+                        onChange={(e) => setRotationType(e.target.value)}
+                        className="h-9 rounded-lg border border-border bg-card px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <option value="daily">Daily rotation</option>
+                        <option value="weekly">Weekly rotation</option>
+                      </select>
+                      <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="h-9 rounded-lg border border-border bg-card px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        required
+                      />
+                    </div>
 
-              <div className="flex gap-4">
-                <select value={rotationType} onChange={(e) => setRotationType(e.target.value)} className="border rounded px-3 py-2">
-                  <option value="daily">Daily rotation</option>
-                  <option value="weekly">Weekly rotation</option>
-                </select>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="border rounded px-3 py-2"
-                  required
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="bg-slate-800 text-white px-4 py-2 rounded disabled:bg-slate-400"
-              >
-                {isSubmitting ? "Saving..." : schedule ? "Update Schedule" : "Create Schedule"}
-              </button>
-            </form>
-          )}
-        </>
-      )}
-    </div>
+                    <Button type="submit" disabled={isSubmitting}>
+                      {isSubmitting ? "Saving..." : schedule ? "Update schedule" : "Create schedule"}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            )}
+          </>
+        )}
+      </div>
+    </AppLayout>
   );
 }
 

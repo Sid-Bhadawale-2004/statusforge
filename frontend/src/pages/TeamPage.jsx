@@ -1,6 +1,11 @@
 import { useState, useEffect } from "react";
+import { UserPlus } from "lucide-react";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import AppLayout from "../components/AppLayout";
+import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Badge } from "../components/ui/badge";
 
 function TeamPage() {
   const { accessToken, user } = useAuth();
@@ -41,42 +46,83 @@ function TeamPage() {
     }
   };
 
-  if (isLoading) return <div className="p-8">Loading team...</div>;
+  const roleBadgeVariant = { admin: "error", responder: "secondary", viewer: "outline" };
 
   return (
-    <div className="p-8 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold text-slate-800 mb-6">Team</h1>
+    <AppLayout title="Team">
+      <div className="max-w-2xl space-y-6">
+        {isAdmin && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Invite a teammate</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleInvite}>
+                {error && (
+                  <p className="text-sm text-error bg-error-bg rounded-lg px-3 py-2 mb-3">{error}</p>
+                )}
+                {message && (
+                  <p className="text-sm text-success bg-success-bg rounded-lg px-3 py-2 mb-3">{message}</p>
+                )}
 
-      {isAdmin && (
-        <form onSubmit={handleInvite} className="bg-white p-4 rounded-lg shadow mb-6 space-y-3">
-          <h2 className="font-semibold text-slate-700">Invite a teammate</h2>
-          {error && <p className="text-red-600 text-sm">{error}</p>}
-          {message && <p className="text-green-700 text-sm bg-green-50 border border-green-200 rounded p-2">{message}</p>}
-          <input type="text" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} className="w-full border rounded px-3 py-2" required />
-          <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full border rounded px-3 py-2" required />
-          <select value={role} onChange={(e) => setRole(e.target.value)} className="w-full border rounded px-3 py-2">
-            <option value="admin">Admin</option>
-            <option value="responder">Responder</option>
-            <option value="viewer">Viewer</option>
-          </select>
-          <button type="submit" disabled={isSubmitting} className="bg-slate-800 text-white px-4 py-2 rounded disabled:bg-slate-400">
-            {isSubmitting ? "Sending..." : "Send Invite"}
-          </button>
-        </form>
-      )}
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <input
+                    type="text"
+                    placeholder="Name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="border border-border bg-background rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                    required
+                  />
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="border border-border bg-background rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                    required
+                  />
+                </div>
 
-      <div className="bg-white rounded-lg shadow divide-y">
-        {members.map((m) => (
-          <div key={m._id || m.id} className="p-4 flex items-center justify-between">
-            <div>
-              <p className="font-medium text-slate-800">{m.name}</p>
-              <p className="text-sm text-slate-500">{m.email}</p>
-            </div>
-            <span className="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-700">{m.role}</span>
+                <div className="flex gap-3">
+                  <select
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                    className="flex-1 border border-border bg-background rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                  >
+                    <option value="admin">Admin</option>
+                    <option value="responder">Responder</option>
+                    <option value="viewer">Viewer</option>
+                  </select>
+                  <Button type="submit" disabled={isSubmitting} className="whitespace-nowrap">
+                    <UserPlus size={16} />
+                    {isSubmitting ? "Sending..." : "Send invite"}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        )}
+
+        <Card>
+          <div className="divide-y divide-border">
+            {isLoading ? (
+              <p className="p-5 text-sm text-muted-foreground">Loading team...</p>
+            ) : (
+              members.map((m) => (
+                <div key={m._id || m.id} className="p-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{m.name}</p>
+                    <p className="text-sm text-muted-foreground font-mono">{m.email}</p>
+                  </div>
+                  <Badge variant={roleBadgeVariant[m.role]}>{m.role}</Badge>
+                </div>
+              ))
+            )}
           </div>
-        ))}
+        </Card>
       </div>
-    </div>
+    </AppLayout>
   );
 }
 
