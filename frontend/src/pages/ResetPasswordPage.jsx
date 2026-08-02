@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import api from "../services/api";
+import AuthLayout from "../components/AuthLayout";
+import { Button } from "../components/ui/button";
 
 function ResetPasswordPage() {
   const { token } = useParams();
@@ -39,71 +41,65 @@ function ResetPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-100">
-      <div className="w-full max-w-sm bg-white p-8 rounded-xl shadow">
-        <h1 className="text-2xl font-bold text-slate-800 mb-6">Set a new password</h1>
+    <AuthLayout>
+      <h1 className="font-display text-lg font-semibold text-foreground mb-6">Set a new password</h1>
 
-        {success ? (
-          <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded p-3">
-            Password reset! Redirecting you to login...
-          </p>
-        ) : (
-          <>
-            {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="New password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full border rounded px-3 py-2 pr-10"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                  tabIndex={-1}
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Confirm new password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full border rounded px-3 py-2 pr-10"
-                  required
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full bg-slate-800 text-white py-2 rounded hover:bg-slate-700 disabled:bg-slate-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {isLoading ? (
-                  <>
-                    <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                    Resetting...
-                  </>
-                ) : (
-                  "Reset Password"
-                )}
-              </button>
-            </form>
-          </>
-        )}
-
-        <p className="text-sm text-slate-500 mt-6 text-center">
-          <Link to="/login" className="text-blue-600">Back to login</Link>
+      {success ? (
+        <p className="text-sm text-success bg-success-bg rounded-lg p-3">
+          Password reset! Redirecting you to login...
         </p>
-      </div>
-    </div>
+      ) : (
+        <>
+          {error && (
+            <p className="text-sm text-error bg-error-bg rounded-lg px-3 py-2 mb-4">{error}</p>
+          )}
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="New password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full border border-border bg-card rounded-lg px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Confirm new password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full border border-border bg-card rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+              required
+            />
+
+            <Button type="submit" disabled={isLoading} className="w-full">
+              {isLoading ? (
+                <>
+                  <span className="h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                  Resetting...
+                </>
+              ) : (
+                "Reset password"
+              )}
+            </Button>
+          </form>
+        </>
+      )}
+
+      <p className="text-sm text-muted-foreground mt-6 text-center">
+        <Link to="/login" className="text-primary hover:underline">Back to login</Link>
+      </p>
+    </AuthLayout>
   );
 }
 
