@@ -13,6 +13,7 @@ const escalationRoutes = require("./routes/escalationRoutes");
 const incidentRoutes = require("./routes/incidentRoutes");
 const webhookRoutes = require("./routes/webhookRoutes");
 const { startHealthChecker } = require("./jobs/healthChecker");
+const publicStatusRoutes = require("./routes/publicStatusRoutes");
 
 const app = express();
 app.set("trust proxy", 1);
@@ -33,6 +34,8 @@ connectDB().then(() => {
   app.use("/api/escalation-policies", escalationRoutes);
   app.use("/api/incidents", incidentRoutes);
   app.use("/api/webhooks", webhookRoutes); // was "/api/incidents/webhook"
+  app.use("/api/public/status", publicStatusRoutes);
+  
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 });
 startEscalationChecker();

@@ -8,6 +8,9 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import ServicesPage from "./pages/ServicesPage";
 import TeamPage from "./pages/TeamPage";
 import ScheduleBuilderPage from "./pages/ScheduleBuilderPage";
+import IncidentsPage from "./pages/IncidentsPage";
+import IncidentDetailPage from "./pages/IncidentDetailPage";
+import PublicStatusPage from "./pages/PublicStatusPage";
 
 function App() {
   return (
@@ -36,6 +39,9 @@ function App() {
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+        <Route path="/incidents" element={<ProtectedRoute><IncidentsPage /></ProtectedRoute>} />
+        <Route path="/incidents/:id" element={<ProtectedRoute><IncidentDetailPage /></ProtectedRoute>} />
+        <Route path="/status/:slug" element={<PublicStatusPage />} />
       </Routes>
     </BrowserRouter>
   );

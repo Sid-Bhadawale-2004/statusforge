@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Server, Users, CalendarClock, LogOut, ChevronDown } from "lucide-react";
+import {
+  LayoutDashboard, Server, Users, CalendarClock, AlertTriangle, LogOut, ChevronDown,
+} from "lucide-react";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import Logomark from "./Logomark";
@@ -12,18 +14,19 @@ import {
 } from "./ui/dropdown-menu";
 
 const navItems = [
+  { to: "/incidents", label: "Incidents", icon: AlertTriangle },
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/services", label: "Services", icon: Server },
   { to: "/schedules", label: "Schedules", icon: CalendarClock },
   { to: "/team", label: "Team", icon: Users },
 ];
 
-function OrgStatusStrip({ accessToken }) {
+function OrgStatusStrip() {
   const [worstStatus, setWorstStatus] = useState(null);
 
   useEffect(() => {
     api
-      .get("/api/services", { headers: { Authorization: `Bearer ${accessToken}` } })
+      .get("/api/services")
       .then((res) => {
         const statuses = res.data.services.map((s) => s.currentStatus);
         if (statuses.includes("outage")) setWorstStatus("outage");
@@ -31,7 +34,7 @@ function OrgStatusStrip({ accessToken }) {
         else setWorstStatus("operational");
       })
       .catch(() => setWorstStatus(null));
-  }, [accessToken]);
+  }, []);
 
   const config = {
     operational: { text: "All systems operational", variant: "success" },
@@ -54,7 +57,7 @@ function getInitials(name = "") {
 }
 
 function AppLayout({ children, title }) {
-  const { user, accessToken, logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -65,15 +68,15 @@ function AppLayout({ children, title }) {
   return (
     <div className="min-h-screen flex bg-background">
       <aside className="w-64 shrink-0 border-r border-border bg-card flex flex-col">
-        <div className="p-3.5 flex items-center justify-between border-b border-border">
+        <div className="brand-gradient p-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <Logomark size={28} />
-            <p className="font-display text-base font-semibold text-foreground leading-tight">StatusForge</p>
+            <p className="font-display text-base font-bold text-white leading-tight">StatusForge</p>
           </div>
-          <Badge variant="secondary">Free</Badge>
+          <Badge className="bg-white/20 text-white border-white/20">Free</Badge>
         </div>
 
-        <OrgStatusStrip accessToken={accessToken} />
+        <OrgStatusStrip />
 
         <nav className="flex-1 px-3 py-4 space-y-1">
           {navItems.map(({ to, label, icon: Icon }) => (
@@ -83,7 +86,7 @@ function AppLayout({ children, title }) {
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                   isActive
-                    ? "bg-accent text-accent-foreground font-medium"
+                    ? "brand-gradient text-white font-semibold shadow-sm"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`
               }
