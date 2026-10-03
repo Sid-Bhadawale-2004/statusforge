@@ -14,6 +14,30 @@ const incidentRoutes = require("./routes/incidentRoutes");
 const webhookRoutes = require("./routes/webhookRoutes");
 const { startHealthChecker } = require("./jobs/healthChecker");
 const publicStatusRoutes = require("./routes/publicStatusRoutes");
+const bcrypt = require("bcryptjs");
+const User = require("./models/user");
+const Organization = require("./models/organization");
+
+async function seedDemoAccount() {
+  const email = (process.env.DEMO_ACCOUNT_EMAIL || "demo@statusforge.local").trim().toLowerCase();
+  const password = process.env.DEMO_ACCOUNT_PASSWORD || "StatusForgeDemo123!";
+  const existing = await User.findOne({ email });
+  if (existing) return;
+
+  const organization = await Organization.create({
+    name: "StatusForge Demo",
+    slug: "statusforge-demo",
+  });
+  const passwordHash = await bcrypt.hash(password, 10);
+  await User.create({
+    organizationId: organization._id,
+    name: "Demo Operator",
+    email,
+    passwordHash,
+    role: "admin",
+  });
+  console.log(`[demo] Seeded demo account: ${email}`);
+}
 
 const app = express();
 app.set("trust proxy", 1);
@@ -25,7 +49,8 @@ app.use(cookieParser());
 
 app.get("/health", (req, res) => res.json({ status: "ok" }));
 
-connectDB().then(() => {
+connectDB().then(async () => {
+  await seedDemoAccount();
   const PORT = process.env.PORT || 5000;
   app.use("/api/auth", authRoutes);
   app.use("/api/services", serviceRoutes);
