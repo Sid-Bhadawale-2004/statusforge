@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const { OAuth2Client } = require("google-auth-library");
 
-const User = require("../models/User");
+const User = require("../models/user");
 const Organization = require("../models/organization");
 const RefreshToken = require("../models/RefreshToken");
 const { generateAccessToken } = require("../utils/generateTokens");
@@ -106,11 +106,17 @@ exports.login = async (req, res) => {
     const accessToken = generateAccessToken(user);
     const refreshToken = await issueRefreshToken(user._id);
 
-    await sendNewLoginEmail(user, {
-      ip: req.ip,
-      userAgent: req.headers["user-agent"],
-      time: new Date().toLocaleString(),
-    });
+    // Email notifications should not prevent a valid user from signing in when
+    // optional mail credentials are unavailable or the mail provider is down.
+    try {
+      await sendNewLoginEmail(user, {
+        ip: req.ip,
+        userAgent: req.headers["user-agent"],
+        time: new Date().toLocaleString(),
+      });
+    } catch (emailError) {
+      console.error("[auth] Could not send login notification:", emailError.message);
+    }
 
     res.cookie("refreshToken", refreshToken, cookieOptions);
     res.json({
