@@ -14,4 +14,10 @@ const forgotPasswordLimiter = rateLimit({
   message: { message: "Too many reset requests. Please try again later." },
 });
 
-module.exports = { authLimiter, forgotPasswordLimiter };
+const webhookLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  message: { message: "Too many webhook requests." },
+});
+
+module.exports = { authLimiter, forgotPasswordLimiter , webhookLimiter};

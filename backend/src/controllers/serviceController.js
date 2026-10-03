@@ -1,4 +1,5 @@
 const Service = require("../models/Service");
+const crypto = require("crypto");
 
 // POST /api/services
 exports.createService = async (req, res) => {
@@ -79,5 +80,23 @@ exports.deleteService = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Failed to delete service." });
+  }
+};
+
+exports.createService = async (req, res) => {
+  try {
+    const { name, description } = req.body;
+    const webhookSecret = crypto.randomBytes(24).toString("hex"); // NEW
+
+    const service = await Service.create({
+      organizationId: req.user.organizationId,
+      name,
+      description,
+      webhookSecret, // NEW
+    });
+
+    res.status(201).json({ service });
+  } catch (err) {
+    // ...unchanged
   }
 };

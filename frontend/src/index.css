@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
 @theme inline {
@@ -29,32 +29,37 @@
 }
 
 :root {
-  --background: #F6F6F8;
-  --foreground: #16171B;
+  --background: #FAFAFF;
+  --foreground: #16171F;
   --card: #FFFFFF;
-  --card-foreground: #16171B;
-  --primary: #16171B;
-  --primary-foreground: #FAFAFA;
-  --secondary: #EFEFF2;
-  --secondary-foreground: #16171B;
-  --muted: #EFEFF2;
-  --muted-foreground: #6B6D76;
-  --accent: #EEEDFC;
-  --accent-foreground: #4235C9;
-  --destructive: #E23D3D;
-  --border: #E4E4E9;
-  --ring: #5B4FE9;
+  --card-foreground: #16171F;
 
-  --success: #0EA968;
-  --success-bg: #E3F7ED;
-  --warning: #E2A032;
-  --warning-bg: #FCF1DC;
-  --error: #E23D3D;
-  --error-bg: #FCE7E7;
+  --primary: #4F46E5;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F3F0FF;
+  --secondary-foreground: #4F46E5;
+  --muted: #F3F2FA;
+  --muted-foreground: #6B6B80;
+  --accent: #FCE7F3;
+  --accent-foreground: #DB2777;
+  --destructive: #EF4444;
+  --border: #E7E5F5;
+  --ring: #4F46E5;
+
+  --success: #16A34A;
+  --success-bg: #DCFCE7;
+  --warning: #F59E0B;
+  --warning-bg: #FEF3C7;
+  --error: #EF4444;
+  --error-bg: #FEE2E2;
 }
 
 body {
   font-family: var(--font-sans);
   background-color: var(--color-background);
   color: var(--color-foreground);
+}
+
+.brand-gradient {
+  background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 55%, #EC4899 100%);
 }

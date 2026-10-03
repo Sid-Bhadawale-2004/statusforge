@@ -10,6 +10,8 @@ const serviceSchema = new mongoose.Schema(
       default: "operational",
     },
     description: { type: String, trim: true },
+    webhookSecret: { type: String },
+    healthCheckUrl: { type: String, trim: true }, // optional — enables self-monitoring
   },
   { timestamps: true }
 );

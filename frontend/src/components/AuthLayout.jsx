@@ -1,8 +1,10 @@
 import Logomark from "./Logomark";
+import GradientBackdrop from "./GradientBackdrop";
 
 function AuthLayout({ children }) {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 relative">
+      <GradientBackdrop />
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
           <Logomark size={40} />

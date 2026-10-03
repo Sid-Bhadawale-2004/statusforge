@@ -1,25 +1,28 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import api from "../services/api";
+import api, { setAccessToken as setApiAccessToken, registerTokenRefreshHandler } from "../services/api";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [accessToken, setAccessToken] = useState(null);
+  const [accessToken, setAccessTokenState] = useState(null);
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true); // true while we check "is there an existing session?"
+  const [loading, setLoading] = useState(true);
 
-  // On first load, try to silently restore a session using the refresh cookie
+  const setAccessToken = (token) => {
+    setAccessTokenState(token);
+    setApiAccessToken(token);
+  };
+
   useEffect(() => {
+    registerTokenRefreshHandler((newToken) => setAccessTokenState(newToken));
+
     const tryRefresh = async () => {
       try {
-        const res = await api.post("/api/auth/refresh"); // sends the httpOnly cookie automatically
+        const res = await api.post("/api/auth/refresh");
         setAccessToken(res.data.accessToken);
-        const meRes = await api.get("/api/auth/me", {
-          headers: { Authorization: `Bearer ${res.data.accessToken}` },
-        });
+        const meRes = await api.get("/api/auth/me");
         setUser(meRes.data.user);
       } catch (err) {
-        // No valid refresh cookie — user simply isn't logged in. Not an error to show.
         setAccessToken(null);
         setUser(null);
       } finally {
@@ -47,7 +50,6 @@ export function AuthProvider({ children }) {
   );
 }
 
-// Custom hook — lets any component just call useAuth() instead of importing AuthContext everywhere
 export function useAuth() {
   return useContext(AuthContext);
 }
