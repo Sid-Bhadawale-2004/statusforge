@@ -29,10 +29,10 @@
 }
 
 :root {
-  --background: #FAFAFF;
-  --foreground: #16171F;
+  --background: #F8F8FC;
+  --foreground: #151522;
   --card: #FFFFFF;
-  --card-foreground: #16171F;
+  --card-foreground: #151522;
 
   --primary: #4F46E5;
   --primary-foreground: #FFFFFF;

@@ -8,18 +8,13 @@ import SetPasswordForm from "../components/SetPasswordForm";
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 
-function StatCard({ icon: Icon, label, value, to, colorClass }) {
+function StatCard({ icon: Icon, label, value, to, colorClass, eyebrow }) {
   return (
-    <Link to={to}>
-      <Card className="hover:border-primary/30 transition-colors">
-        <CardContent className="pt-5 flex items-center justify-between">
-          <div>
-            <p className="text-xs text-muted-foreground font-mono mb-1">{label}</p>
-            <p className="font-display text-2xl font-bold text-foreground">{value}</p>
-          </div>
-          <div className={`h-11 w-11 rounded-xl flex items-center justify-center ${colorClass}`}>
-            <Icon size={20} />
-          </div>
+    <Link to={to} className="group block">
+      <Card className="stat-card h-full overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg">
+        <CardContent className="relative flex min-h-36 flex-col justify-between gap-6 p-5">
+          <div className="flex items-start justify-between gap-3"><div><p className="font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">{label}</p><p className="mt-3 font-display text-4xl font-bold tracking-tight text-foreground">{value}</p></div><div className={`flex size-10 items-center justify-center rounded-xl ${colorClass}`}><Icon size={19} /></div></div>
+          <p className="text-xs text-muted-foreground">{eyebrow}</p>
         </CardContent>
       </Card>
     </Link>
@@ -73,23 +68,22 @@ function DashboardPage() {
 
   return (
     <AppLayout title="Dashboard">
-      <div className="max-w-3xl space-y-6">
-        <div>
-          <h2 className="font-display text-3xl font-bold text-foreground">Welcome back, {user?.name?.split(" ")[0]} 👋</h2>
-          <p className="text-sm text-muted-foreground mt-1">Here's what's happening across your organization.</p>
+      <div className="mx-auto max-w-6xl space-y-8">
+        <div className="relative overflow-hidden rounded-2xl border border-primary/15 bg-card px-6 py-7 shadow-sm sm:px-8">
+          <div className="absolute -right-20 -top-24 size-64 rounded-full bg-primary/10 blur-3xl" aria-hidden="true" />
+          <div className="relative"><p className="font-mono text-[10px] font-medium uppercase tracking-[0.2em] text-primary">Operations overview</p><h2 className="mt-3 font-display text-3xl font-bold tracking-tight text-foreground sm:text-4xl">Welcome back, {user?.name?.split(" ")[0]}.</h2><p className="mt-2 max-w-xl text-sm text-muted-foreground">Your infrastructure at a glance. Monitor services, team health, and public status from one command center.</p></div>
         </div>
 
         {!isLoading && (
           <div className={`rounded-xl border p-5 ${bannerStyles[healthCopy[overallHealth].variant]}`}>
-            <p className="font-display text-lg font-semibold">{healthCopy[overallHealth].text}</p>
-            <p className="text-sm opacity-80 mt-0.5">{healthCopy[overallHealth].sub}</p>
+            <div className="flex items-start gap-3"><span className="mt-1.5 size-2 rounded-full bg-current" aria-hidden="true" /><div><p className="font-display text-lg font-semibold">{healthCopy[overallHealth].text}</p><p className="mt-0.5 text-sm opacity-80">{healthCopy[overallHealth].sub}</p></div></div>
           </div>
         )}
 
-        <div className="grid grid-cols-3 gap-4">
-          <StatCard icon={Server} label="Services" value={isLoading ? "—" : services.length} to="/services" colorClass="bg-indigo-100 text-indigo-600" />
-          <StatCard icon={CalendarClock} label="Operational" value={isLoading ? "—" : operationalCount} to="/services" colorClass="bg-emerald-100 text-emerald-600" />
-          <StatCard icon={Users} label="Team members" value={isLoading ? "—" : teamCount} to="/team" colorClass="bg-pink-100 text-pink-600" />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <StatCard icon={Server} label="Services" value={isLoading ? "—" : services.length} eyebrow="Registered in workspace" to="/services" colorClass="bg-indigo-100 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-300" />
+          <StatCard icon={CalendarClock} label="Operational" value={isLoading ? "—" : operationalCount} eyebrow="Currently healthy" to="/services" colorClass="bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-300" />
+          <StatCard icon={Users} label="Team members" value={isLoading ? "—" : teamCount} eyebrow="With workspace access" to="/team" colorClass="bg-pink-100 text-pink-600 dark:bg-pink-950 dark:text-pink-300" />
         </div>
 
         <Card>
